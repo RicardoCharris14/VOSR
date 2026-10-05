@@ -14,7 +14,7 @@ logs/
 wandb/
 exp_vosr/
 preset/ckpts/
-preset/datasets/ScreenSR/
+preset/datasets/
 preset/results/
 
 *.pth
@@ -23,3 +23,4 @@ preset/results/
 *.safetensors
 *.tar
 *.zip
+
