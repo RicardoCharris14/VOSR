@@ -1,12 +1,12 @@
 import os
 from PIL import Image
 
-gt_dir = "preset/datasets/test_gt"
-lr_dir = "preset/datasets/test_lr"
+gt_dir = "preset/datasets/test_g512"
+lr_dir = "preset/datasets/test_lr128"
 os.makedirs(lr_dir, exist_ok=True)
 
 for fname in os.listdir(gt_dir):
-    if fname.lower().endswith((".jpg")):
+    if fname.lower().endswith((".png", ".jpg", ".jpeg")):
         img = Image.open(os.path.join(gt_dir, fname)).convert("RGB")
         # Reducción bicúbica x4 (1024 -> 256)
         w, h = img.size

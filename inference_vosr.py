@@ -15,6 +15,10 @@ from torchvision.transforms import Normalize
 from safetensors.torch import load_file
 from tqdm import tqdm
 
+torch.set_float32_matmul_precision("high")
+torch._dynamo.config.disable = True
+torch._dynamo.config.suppress_errors = True
+
 torch.hub.set_dir('preset/ckpts/torch_cache')
 sys.path.append(os.getcwd())
 # Make the VOSR/ dir (where tiled_vae.py lives) importable from any run cwd.
@@ -485,6 +489,14 @@ def main():
             elif args.align_method == 'wavelet':
                 sr_img = wavelet_color_fix(sr_img, input_img)
             sr_img.save(os.path.join(out_dir, os.path.splitext(img_name)[0] + '.png'))
+
+            # Liberacion de VRAM
+            del lq, input_img, raw_img, sr_img
+            if 'sr_tensor' in locals():
+                del sr_tensor
+
+            if idx % 5 == 0:
+                torch.cuda.empty_cache()
 
         except Exception as e:
             print(f"Error processing {img_name}: {e}")

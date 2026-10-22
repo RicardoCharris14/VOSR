@@ -96,5 +96,5 @@ report_to: none
 
 
 
-dataset_type: 'webdataset' # txt, webdataset
+dataset_type: 'txt' # txt, webdataset
 shuffle_buffer: 2000
