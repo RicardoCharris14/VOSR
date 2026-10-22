@@ -3,14 +3,14 @@ train_dataset_config: configs/train_txt/train_dataset_txt.txt
 suffix: ''
 
 
-test_lq_dir: preset/datasets/RealSR/test_LR
-test_gt_dir: preset/datasets/RealSR/test_HR
+test_lq_dir: preset/datasets/test_gt512
+test_gt_dir: preset/datasets/test_lr128
 test_upscale: 4
 
 infer_steps: 25
 resolution: 512
-train_batch_size: 8
-gradient_accumulation_steps: 1
+train_batch_size: 2
+gradient_accumulation_steps: 4
 dataloader_num_workers: 8
 
 # Model configuration
@@ -91,7 +91,7 @@ pretrained_ckpt: preset/ckpts/VOSR_0.5B_ms/checkpoints/ema_model.safetensors
 # logging
 logging_dir: logs
 output_dir: exp_vosr/
-report_to: none
+report_to: wandb
 
 
 
