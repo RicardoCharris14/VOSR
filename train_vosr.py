@@ -574,6 +574,9 @@ def main(config_path):
         ema.eval()
         accelerator.register_for_checkpointing(ema)
 
+    if hasattr(model, "gradient_checkpointing_enable"):
+        model.gradient_checkpointing_enable()
+    
     model, model_ae, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
         model, model_ae, optimizer, train_dataloader, lr_scheduler
     )
@@ -692,6 +695,9 @@ def main(config_path):
 
     gc.disable()
     
+    best_loss = float("inf")
+    initial_global_step = global_step
+    
     while global_step < args.max_train_steps:
         epoch += 1
         
@@ -747,6 +753,32 @@ def main(config_path):
                 lr_scheduler.step()              
                 progress_bar.update(1)
                 global_step += 1
+                
+                current_loss =  loss.detach().item()
+                
+                # Guardar automáticamente solo si se alcanza un nuevo mínimo histórico
+                # Se descartan los primeros 100 pasos para evitar guardar fluctuaciones iniciales del warmup
+                if current_loss < best_loss and global_step > 100:
+                    best_loss = current_loss
+
+                    if accelerator.is_main_process:
+                        # Crear directorio exclusivo para el mejor checkpoint
+                        best_ckpt_dir = os.path.join(args.output_dir, "best_checkpoint")
+                        os.makedirs(best_ckpt_dir, exist_ok=True)
+
+                        # Extraer estado del modelo sin wrappers DDP
+                        unwrapped_model = accelerator.unwrap_model(model)
+                        model_state = {k: v.cpu().clone() for k, v in unwrapped_model.state_dict().items()}
+
+                        # Guardar el archivo safetensors con el mejor loss
+                        save_file(model_state, os.path.join(best_ckpt_dir, "model.safetensors"))
+
+                        if args.use_ema:
+                            ema_state = {k: v.cpu().clone() for k, v in ema.state_dict().items()}
+                            save_file(ema_state, os.path.join(best_ckpt_dir, "ema_model.safetensors"))
+
+                        logger.info(f"===> ¡Nuevo récord de pérdida alcanzado! Loss: {best_loss:.4f} (Paso {global_step}). Modelo guardado en {best_ckpt_dir}")
+                
                 if global_step % args.checkpointing_steps == 0 and global_step > 0:
                     accelerator.wait_for_everyone()
                     gc.collect()
